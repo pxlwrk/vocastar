@@ -8,6 +8,7 @@ import { Header, Modal, Page } from "@/components/ui";
 import { db } from "@/lib/db";
 import { setCurrentProfileId, useCurrentProfileId } from "@/lib/current-profile";
 import { levelFromXp } from "@/lib/gamification";
+import { loadOcrStatus } from "@/lib/ocr-status";
 import { deleteProfile } from "@/lib/repo";
 import { exportProfile, importProfile, type ProfileSnapshot } from "@/lib/snapshot";
 import type { Profile } from "@/lib/types";
@@ -65,6 +66,7 @@ export default function ParentArea() {
   const [code, setCode] = useState<{ open: boolean; code?: string; error?: string }>({ open: false });
   const [notice, setNotice] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [ocrStatus] = useState(loadOcrStatus);
   const profiles = useLiveQuery(() => db.profiles.orderBy("name").toArray(), []);
 
   async function makeSyncCode(p: Profile) {
@@ -172,7 +174,15 @@ export default function ParentArea() {
             </p>
             {features && (
               <p className="mt-2">
-                Status: KI-Fotoerkennung {features.ai ? "✅ aktiv" : "➖ aus (Erkennung auf dem Gerät)"} · Sync {features.sync ? "✅ aktiv" : "➖ nicht eingerichtet"}
+                Status: KI-Fotoerkennung {features.ai ? "✅ eingerichtet" : "➖ aus (Erkennung auf dem Gerät)"} · Sync {features.sync ? "✅ aktiv" : "➖ nicht eingerichtet"}
+              </p>
+            )}
+            {ocrStatus && (
+              <p className={`mt-2 ${ocrStatus.ok ? "" : "text-coral-dark"}`}>
+                Letzte KI-Fotoerkennung ({new Date(ocrStatus.at).toLocaleString("de-DE")}):{" "}
+                {ocrStatus.ok ? "✅ erfolgreich" : `❌ ${ocrStatus.message ?? "fehlgeschlagen"}`}
+                {ocrStatus.reason === "billing" && " Bitte in der Anthropic Console unter „Plans & Billing“ Guthaben aufladen."}
+                {ocrStatus.reason === "auth" && " Bitte den API-Key in den Vercel-Umgebungsvariablen prüfen."}
               </p>
             )}
           </div>

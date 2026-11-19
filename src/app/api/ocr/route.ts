@@ -71,13 +71,30 @@ export async function POST(req: Request) {
       .slice(0, 200);
     return Response.json({ pairs });
   } catch (error) {
-    if (error instanceof Anthropic.RateLimitError) {
-      return Response.json({ error: "Die KI ist gerade ausgelastet." }, { status: 429 });
-    }
     if (error instanceof Anthropic.APIError) {
-      console.error("OCR API error", error.status, error.message);
-      return Response.json({ error: "Die KI-Erkennung ist fehlgeschlagen." }, { status: 502 });
+      const reason = classify(error);
+      console.error("OCR API error", error.status, reason, error.message);
+      return Response.json({ error: REASON_TEXT[reason], reason }, { status: reason === "rate" ? 429 : 502 });
     }
     throw error;
   }
+}
+
+type OcrFailure = "billing" | "auth" | "rate" | "overloaded" | "other";
+
+const REASON_TEXT: Record<OcrFailure, string> = {
+  billing: "Das Guthaben des Anthropic-Kontos ist aufgebraucht.",
+  auth: "Der Anthropic-API-Key ist ungültig oder fehlt.",
+  rate: "Die KI bekommt gerade zu viele Anfragen.",
+  overloaded: "Die KI ist gerade überlastet.",
+  other: "Die KI-Erkennung ist fehlgeschlagen.",
+};
+
+function classify(error: InstanceType<typeof Anthropic.APIError>): OcrFailure {
+  if (error instanceof Anthropic.AuthenticationError || error instanceof Anthropic.PermissionDeniedError) return "auth";
+  if (error instanceof Anthropic.RateLimitError) return "rate";
+  if (error instanceof Anthropic.InternalServerError) return "overloaded";
+  // Fehlendes Guthaben kommt als 400 invalid_request_error; nur der Text unterscheidet es
+  if (error instanceof Anthropic.BadRequestError && /credit balance/i.test(error.message)) return "billing";
+  return "other";
 }

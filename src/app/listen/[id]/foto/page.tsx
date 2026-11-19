@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { db } from "@/lib/db";
 import { downscaleImage } from "@/lib/image";
 import { getLanguage } from "@/lib/languages";
+import { saveOcrStatus } from "@/lib/ocr-status";
 import { parsePairs } from "@/lib/parse-pairs";
 import { addWords, unlockAchievement } from "@/lib/repo";
 import { sfx } from "@/lib/sound";
@@ -29,11 +30,13 @@ export default function PhotoImport() {
   const features = useServerFeatures();
   const list = useLiveQuery(() => db.lists.get(id), [id]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [phase, setPhase] = useState<Phase>("pick");
   const [progress, setProgress] = useState({ done: 0, total: 0, label: "" });
   const [rows, setRows] = useState<WordPair[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [aiNotice, setAiNotice] = useState<string | null>(null);
   const [pasteText, setPasteText] = useState("");
 
   if (!profile || !list) return null;
@@ -56,6 +59,7 @@ export default function PhotoImport() {
     const all: WordPair[] = [];
     let usedFallback = false;
     let failed = false;
+    let aiProblem: string | null = null;
     for (let i = 0; i < photos.length; i++) {
       const photo = photos[i];
       setProgress({ done: i, total: photos.length, label: `Foto ${i + 1} von ${photos.length}` });
@@ -67,10 +71,16 @@ export default function PhotoImport() {
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ image: photo.base64, mediaType: "image/jpeg", targetLang: list!.targetLang }),
           });
-          const json = await res.json();
-          if (res.ok) pairs = json.pairs;
+          const json = await res.json().catch(() => ({}));
+          if (res.ok) {
+            pairs = json.pairs;
+            saveOcrStatus({ ok: true, at: Date.now() });
+          } else {
+            aiProblem = json.error ?? `Fehler ${res.status}`;
+            saveOcrStatus({ ok: false, reason: json.reason, message: aiProblem ?? undefined, at: Date.now() });
+          }
         } catch {
-          /* Fallback unten */
+          aiProblem = "Keine Verbindung zum Server.";
         }
       }
       if (!pairs) {
@@ -94,12 +104,15 @@ export default function PhotoImport() {
     }
     setProgress({ done: photos.length, total: photos.length, label: "Fertig!" });
     setRows(dedupe(all));
+    setAiNotice(aiProblem);
     setMessage(
       failed && !all.length
         ? "Oh je, die Texterkennung konnte nicht starten. Bist du online? Du kannst die Wörter auch eintippen oder als Text einfügen."
         : all.length
         ? usedFallback
-          ? "Ich habe mein Bestes gegeben! Bitte prüfe die Wörter, bevor du speicherst."
+          ? aiProblem
+            ? "Die KI-Erkennung ist gerade nicht verfügbar, darum habe ich es selbst auf dem Gerät versucht. Bitte prüfe die Wörter gut!"
+            : "Ich habe mein Bestes gegeben! Bitte prüfe die Wörter, bevor du speicherst."
           : "Super, das habe ich gefunden! Stimmt alles?"
         : "Hm, ich konnte leider keine Vokabeln erkennen. Versuch ein schärferes Foto oder tippe sie ein.",
     );
@@ -124,22 +137,32 @@ export default function PhotoImport() {
 
   return (
     <Page tabs={false}>
-      <Header title="📸 Wörter fotografieren" back={`/listen/${id}`} />
+      <Header title="📸 Wörter aus Bildern" back={`/listen/${id}`} />
 
       {phase === "pick" && (
         <>
           <div className="flex items-center gap-2 mb-5">
             <Voki mood="happy" size={80} className="shrink-0" />
             <SpeechBubble>
-              Fotografiere die Vokabelseite aus deinem Buch. Ich lese die Wörter für dich ab!
+              Mach ein Foto der Vokabelseite oder wähle Bilder aus. Ich lese die Wörter für dich ab!
             </SpeechBubble>
           </div>
 
           <input
-            ref={fileRef}
+            ref={cameraRef}
             type="file"
             accept="image/*"
             capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              void onFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
             multiple
             className="hidden"
             onChange={(e) => {
@@ -147,9 +170,15 @@ export default function PhotoImport() {
               e.target.value = "";
             }}
           />
-          <button className="btn btn-sky w-full !min-h-20 !text-xl mb-3" onClick={() => fileRef.current?.click()}>
-            📷 Foto aufnehmen oder auswählen
-          </button>
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <button className="btn btn-sky !min-h-20 !text-lg" onClick={() => cameraRef.current?.click()}>
+              📷 Foto machen
+            </button>
+            <button className="btn btn-sun !min-h-20 !text-lg" onClick={() => fileRef.current?.click()}>
+              🖼️ Bild auswählen
+            </button>
+          </div>
+          {photos.length > 0 && <p className="text-center text-sm text-ink-soft font-semibold mb-2">{photos.length} von 6 Bildern · du kannst noch mehr hinzufügen</p>}
 
           {photos.length > 0 && (
             <div className="grid grid-cols-3 gap-2 mb-4">
@@ -211,6 +240,11 @@ export default function PhotoImport() {
             <Voki mood={rows.length ? "cheer" : "sad"} size={72} className="shrink-0" />
             {message && <SpeechBubble>{message}</SpeechBubble>}
           </div>
+          {aiNotice && (
+            <div className="card p-3 mb-4 !bg-sun/20 !border-sun-dark text-sm font-semibold">
+              ⚠️ KI-Erkennung nicht verfügbar: {aiNotice} Ein Erwachsener findet Details im Elternbereich.
+            </div>
+          )}
           <div className="flex gap-2 mb-3">
             <button
               className="btn btn-ghost flex-1 !text-base"
