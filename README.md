@@ -50,7 +50,7 @@ Die App funktioniert ohne jede Konfiguration. Zwei Funktionen werden besser, wen
 
 | Variable | Wirkung |
 |---|---|
-| `ANTHROPIC_API_KEY` | Fotos werden mit Claude ausgewertet. Das klappt auch bei Schulbuchseiten mit Lautschrift und mehreren Spalten zuverlässig. Ohne Schlüssel läuft die Erkennung mit Tesseract.js direkt im Browser. |
+| `ANTHROPIC_API_KEY` | Fotos werden mit Claude ausgewertet (Standard: Claude Haiku 5.5, per `ANTHROPIC_OCR_MODEL` änderbar). Das klappt auch bei Schulbuchseiten mit Lautschrift und mehreren Spalten zuverlässig. Ohne Schlüssel läuft die Erkennung mit Tesseract.js direkt im Browser. |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Aktiviert das Teilen von Listen und Sync-Codes für Profile. Die Variablen `KV_REST_API_URL`/`KV_REST_API_TOKEN` aus der Vercel-Integration werden ebenfalls erkannt. Codes gelten 180 Tage. |
 | `NEXT_PUBLIC_TESSDATA_URL` | Eigene Quelle für die Tesseract-Sprachdaten (Standard: jsDelivr). |
 

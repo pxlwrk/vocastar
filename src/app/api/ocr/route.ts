@@ -6,7 +6,8 @@ import { clientKey, rateLimit } from "@/lib/server/redis";
 
 export const maxDuration = 60;
 
-const MODEL = process.env.ANTHROPIC_OCR_MODEL ?? "claude-opus-5-5";
+// Günstigstes aktuelles Modell; per ANTHROPIC_OCR_MODEL überschreibbar
+const MODEL = process.env.ANTHROPIC_OCR_MODEL ?? "claude-haiku-5-5";
 const MAX_BASE64 = 5_000_000;
 
 const OcrBody = z.object({
