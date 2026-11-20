@@ -36,7 +36,7 @@ export async function createProfile(input: {
     todayCount: 0,
     dailyGoal: 20,
     unlockedItems: [],
-    settings: { autoSpeak: input.difficulty === "leicht", sound: true, speechRate: "normal" },
+    settings: { autoSpeak: input.difficulty === "leicht", sound: true, speechRate: "normal", voice: "female" },
     createdAt: now,
     updatedAt: now,
   };

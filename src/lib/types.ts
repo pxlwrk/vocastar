@@ -6,6 +6,7 @@ export interface ProfileSettings {
   autoSpeak: boolean;
   sound: boolean;
   speechRate: "slow" | "normal";
+  voice?: "female" | "male" | "auto";
 }
 
 export interface Profile {

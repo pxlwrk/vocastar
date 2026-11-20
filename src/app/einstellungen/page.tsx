@@ -11,7 +11,7 @@ import { setCurrentProfileId } from "@/lib/current-profile";
 import { AVATARS, COLORS } from "@/lib/gamification";
 import { DIFFICULTIES } from "@/lib/levels";
 import { updateProfile } from "@/lib/repo";
-import { speak } from "@/lib/speech";
+import { setVoicePreference, speak } from "@/lib/speech";
 import type { ProfileSettings } from "@/lib/types";
 
 function Toggle({ label, icon, on, onChange }: { label: string; icon: string; on: boolean; onChange: (v: boolean) => void }) {
@@ -97,6 +97,36 @@ export default function Settings() {
         <section className="card px-4 py-1 mb-4 divide-y-2 divide-line">
           <Toggle label="Töne" icon="🎵" on={profile.settings.sound} onChange={(sound) => set({ sound })} />
           <Toggle label="Wörter automatisch vorlesen" icon="🔊" on={profile.settings.autoSpeak} onChange={(autoSpeak) => set({ autoSpeak })} />
+          <div className="py-3">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl" aria-hidden>
+                🎙️
+              </span>
+              <span className="font-display text-lg font-semibold">Stimme</span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  ["female", "👩 Frau"],
+                  ["male", "👨 Mann"],
+                  ["auto", "🎲 Egal"],
+                ] as const
+              ).map(([v, label]) => (
+                <button
+                  key={v}
+                  onClick={() => {
+                    void set({ voice: v });
+                    setVoicePreference(v);
+                    speak("Hello! Let's learn some words.", "en-GB", profile.settings.speechRate);
+                  }}
+                  className={`rounded-2xl border-2 py-2 font-display font-semibold ${(profile.settings.voice ?? "female") === v ? "border-primary bg-primary/10" : "border-line bg-white"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-ink-soft font-semibold mt-2">Welche Stimmen es gibt, hängt vom Gerät ab.</p>
+          </div>
           <div className="py-3">
             <div className="flex items-center gap-3 mb-2">
               <span className="text-2xl" aria-hidden>
