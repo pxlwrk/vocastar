@@ -3,20 +3,18 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { TabBar } from "@/components/TabBar";
-import { Header, Modal, Page, Pill, ProgressBar } from "@/components/ui";
+import { ShopView } from "@/components/ShopView";
+import { Header, Page, ProgressBar } from "@/components/ui";
 import { useProfile } from "@/hooks/useProfile";
 import { db } from "@/lib/db";
-import { ACHIEVEMENTS, levelFromXp, SHOP_ITEMS, todayKey, visibleStreak } from "@/lib/gamification";
+import { ACHIEVEMENTS, levelFromXp, todayKey, visibleStreak } from "@/lib/gamification";
 import { isMastered } from "@/lib/leitner";
-import { buyItem, updateProfile } from "@/lib/repo";
-import { sfx } from "@/lib/sound";
 
 type Tab = "abzeichen" | "laden" | "familie";
 
 export default function Achievements() {
   const profile = useProfile();
   const [tab, setTab] = useState<Tab>("abzeichen");
-  const [buyFor, setBuyFor] = useState<string | null>(null);
   const data = useLiveQuery(async () => {
     if (!profile) return null;
     const unlocked = await db.achievements.where("profileId").equals(profile.id).toArray();
@@ -41,7 +39,6 @@ export default function Achievements() {
 
   if (!profile || !data) return null;
   const lvl = levelFromXp(profile.xp);
-  const item = SHOP_ITEMS.find((i) => i.id === buyFor);
 
   return (
     <>
@@ -104,40 +101,7 @@ export default function Achievements() {
           </div>
         )}
 
-        {tab === "laden" && (
-          <>
-            <p className="text-center font-semibold text-ink-soft mb-3">
-              Tausche deine Sterne gegen Extras für deinen Avatar! Du hast <b className="text-ink">{profile.stars} ⭐</b>
-            </p>
-            <div className="grid grid-cols-3 gap-3">
-              {SHOP_ITEMS.map((it) => {
-                const owned = profile.unlockedItems.includes(it.id);
-                const equipped = profile.equippedItem === it.id;
-                const affordable = profile.stars >= it.price;
-                return (
-                  <button
-                    key={it.id}
-                    onClick={() => {
-                      if (owned) {
-                        sfx.tap();
-                        void updateProfile(profile.id, { equippedItem: equipped ? undefined : it.id });
-                      } else setBuyFor(it.id);
-                    }}
-                    className={`card p-3 flex flex-col items-center gap-1 active:scale-95 transition ${equipped ? "!border-primary !bg-primary/10" : ""}`}
-                  >
-                    <span className="text-4xl">{it.emoji}</span>
-                    <span className="font-display font-semibold">{it.name}</span>
-                    {owned ? (
-                      <Pill className={equipped ? "!bg-primary !text-white !border-primary" : ""}>{equipped ? "Angezogen" : "Anziehen"}</Pill>
-                    ) : (
-                      <Pill className={affordable ? "" : "opacity-60"}>{it.price} ⭐</Pill>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
+        {tab === "laden" && <ShopView profile={profile} />}
 
         {tab === "familie" && (
           <div className="flex flex-col gap-2">
@@ -156,42 +120,6 @@ export default function Achievements() {
       </Page>
       <TabBar />
 
-      <Modal open={!!item} onClose={() => setBuyFor(null)}>
-        {item && (
-          <div className="text-center">
-            <div className="text-7xl mb-2 anim-pop">{item.emoji}</div>
-            <h2 className="font-display text-2xl font-semibold mb-1">{item.name}</h2>
-            {profile.stars >= item.price ? (
-              <>
-                <p className="font-semibold text-ink-soft mb-4">Für {item.price} ⭐ kaufen?</p>
-                <div className="flex gap-2">
-                  <button className="btn btn-ghost flex-1" onClick={() => setBuyFor(null)}>
-                    Nein
-                  </button>
-                  <button
-                    className="btn btn-sun flex-1"
-                    onClick={async () => {
-                      if (await buyItem(profile.id, item.id)) sfx.coin();
-                      setBuyFor(null);
-                    }}
-                  >
-                    Kaufen!
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="font-semibold text-ink-soft mb-4">
-                  Dir fehlen noch {item.price - profile.stars} ⭐. Spiel ein paar Runden, dann klappt&apos;s!
-                </p>
-                <button className="btn w-full" onClick={() => setBuyFor(null)}>
-                  Okay
-                </button>
-              </>
-            )}
-          </div>
-        )}
-      </Modal>
     </>
   );
 }

@@ -7,6 +7,7 @@ import type {
   VocabList,
   Word,
 } from "./types";
+import { migrateProfile } from "./shop";
 
 export class VocaDB extends Dexie {
   profiles!: EntityTable<Profile, "id">;
@@ -26,6 +27,18 @@ export class VocaDB extends Dexie {
       achievements: "[profileId+key], profileId",
       sessions: "id, profileId, date",
     });
+    // v2: neuer Schatzladen (Voki-Outfits, Rahmen, Tiere)
+    this.version(2)
+      .stores({})
+      .upgrade((tx) =>
+        tx
+          .table("profiles")
+          .toCollection()
+          .modify((p: Profile) => {
+            Object.assign(p, migrateProfile(p));
+            delete (p as Profile & { equippedItem?: string }).equippedItem;
+          }),
+      );
   }
 }
 

@@ -5,8 +5,8 @@ import {
   levelFromXp,
   starsForAccuracy,
   updateStreak,
-  SHOP_ITEMS,
 } from "./gamification";
+import { getItem, toggleEquipChanges } from "./shop";
 import type {
   Difficulty,
   GameMode,
@@ -36,6 +36,7 @@ export async function createProfile(input: {
     todayCount: 0,
     dailyGoal: 20,
     unlockedItems: [],
+    outfit: {},
     settings: { autoSpeak: input.difficulty === "leicht", sound: true, speechRate: "normal", voice: "female" },
     createdAt: now,
     updatedAt: now,
@@ -236,6 +237,7 @@ export async function recordRound(input: {
     if (input.difficulty === "schwer" && stars === 3 && total >= 5) keys.push("hard-mode");
     if (input.mode === "blitz" && (input.score ?? correct) >= 15) keys.push("blitz-15");
     if (after.level >= 5) keys.push("level-5");
+    if (after.level >= 10) keys.push("level-10");
     const mastered = (await db.progress.where("profileId").equals(profileId).toArray()).filter(isMastered).length;
     if (mastered >= 25) keys.push("mastered-25");
     if (mastered >= 100) keys.push("mastered-100");
@@ -256,20 +258,41 @@ export async function recordRound(input: {
   });
 }
 
-export async function buyItem(profileId: string, itemId: string): Promise<boolean> {
-  const item = SHOP_ITEMS.find((i) => i.id === itemId);
-  if (!item) return false;
+export type BuyResult = "ok" | "level" | "stars" | "owned" | "unknown";
+
+export async function buyItem(profileId: string, itemId: string): Promise<BuyResult> {
+  const item = getItem(itemId);
+  if (!item) return "unknown";
   return db.transaction("rw", db.profiles, db.achievements, async () => {
     const p = await db.profiles.get(profileId);
-    if (!p || p.stars < item.price || p.unlockedItems.includes(itemId)) return false;
+    if (!p) return "unknown";
+    if (p.unlockedItems.includes(itemId)) return "owned";
+    if (levelFromXp(p.xp).level < (item.minLevel ?? 1)) return "level";
+    if (p.stars < item.price) return "stars";
+    const changes = toggleEquipChanges({ ...p, outfit: p.outfit ?? {} }, item, p.avatar);
     await db.profiles.update(profileId, {
       stars: p.stars - item.price,
       unlockedItems: [...p.unlockedItems, itemId],
-      equippedItem: itemId,
+      ...changes,
       updatedAt: Date.now(),
     });
-    await unlock(profileId, ["shopper"]);
-    return true;
+    const outfit = changes.outfit ?? p.outfit ?? {};
+    await unlock(profileId, outfit.head && outfit.eyes && outfit.neck ? ["shopper", "dress-up"] : ["shopper"]);
+    return "ok";
+  });
+}
+
+/** Gekauften Gegenstand an- oder ausziehen. */
+export async function toggleItem(profileId: string, itemId: string, fallbackAvatar: string) {
+  const item = getItem(itemId);
+  if (!item) return;
+  await db.transaction("rw", db.profiles, db.achievements, async () => {
+    const p = await db.profiles.get(profileId);
+    if (!p || !p.unlockedItems.includes(itemId)) return;
+    const changes = toggleEquipChanges(p, item, fallbackAvatar);
+    await db.profiles.update(profileId, { ...changes, updatedAt: Date.now() });
+    const outfit = changes.outfit ?? p.outfit ?? {};
+    if (outfit.head && outfit.eyes && outfit.neck) await unlock(profileId, ["dress-up"]);
   });
 }
 

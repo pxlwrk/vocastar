@@ -20,7 +20,7 @@ Eine mobile-first Webapp, mit der Kinder spielerisch Vokabeln lernen. Begleitet 
 - **Vokabeln eingeben:** manuell (schnelle Eingabe mit Enter und Akzent-Tasten), per **Foto** (mehrere Fotos auf einmal) oder per **Text einfügen**. Vor dem Speichern prüft man alles in einer bearbeitbaren Tabelle.
 - **7 Spiele:** Karteikarten (mit Wischen), Quiz, Memory, Buchstabensalat, Schreiben, Hör-Quiz und Blitzrunde.
 - **Lernsystem:** Leitner-Karteikasten mit 5 Fächern; fällige und schwierige Wörter kommen zuerst dran.
-- **Gamification:** XP und Level, 1 bis 3 Sterne pro Runde, Combo-Bonus, tägliche Serie 🔥, Tagesziel 🎯, 15 Abzeichen, Schatzladen mit Avatar-Extras und eine freundliche Familien-Bestenliste.
+- **Gamification:** XP und Level (jede Stufe braucht 250 XP × aktuelles Level, der Aufwand steigt also mit dem Level), 1 bis 3 Sterne pro Runde, Combo-Bonus, tägliche Serie 🔥, Tagesziel 🎯, 17 Abzeichen und eine freundliche Familien-Bestenliste. Im **Schatzladen** gibt es für Sterne Outfits für Voki (direkt in die Eule gezeichnet), Rahmen für den eigenen Avatar und Spezialtiere; viele Schätze werden erst ab einem bestimmten Level freigeschaltet.
 - **Sprachausgabe** über die Web Speech API, mit Sprechtempo „Schildkröte“ oder „Hase“.
 - **Teilen & Sync:** Listen per Code teilen (z. B. `TIGER-482`) und Profile auf ein anderes Gerät übertragen. Zusätzlich gibt es eine Sicherung als JSON-Datei.
 - **Elternbereich** hinter einer Rechenaufgabe: Profile verwalten, sichern, Sync-Codes erzeugen, Datenschutz-Infos.

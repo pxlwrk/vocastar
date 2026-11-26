@@ -4,7 +4,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useRef, useState } from "react";
 import { useServerFeatures } from "@/components/ShareDialog";
 import { Header, Page, ProgressBar } from "@/components/ui";
-import { SpeechBubble, Voki } from "@/components/Voki";
+import { MyVoki } from "@/components/MyVoki";
+import { SpeechBubble } from "@/components/Voki";
 import { useProfile } from "@/hooks/useProfile";
 import { db } from "@/lib/db";
 import { downscaleImage } from "@/lib/image";
@@ -142,7 +143,7 @@ export default function PhotoImport() {
       {phase === "pick" && (
         <>
           <div className="flex items-center gap-2 mb-5">
-            <Voki mood="happy" size={80} className="shrink-0" />
+            <MyVoki mood="happy" size={80} className="shrink-0" />
             <SpeechBubble>
               Mach ein Foto der Vokabelseite oder wähle Bilder aus. Ich lese die Wörter für dich ab!
             </SpeechBubble>
@@ -227,7 +228,7 @@ export default function PhotoImport() {
 
       {phase === "working" && (
         <div className="flex flex-col items-center gap-4 mt-10">
-          <Voki mood="think" size={120} className="anim-float" />
+          <MyVoki mood="think" size={120} className="anim-float" />
           <p className="font-display text-2xl font-semibold">Ich lese …</p>
           <ProgressBar value={progress.done} max={progress.total || 1} color="var(--sky)" className="w-full" />
           <p className="text-ink-soft font-semibold">{progress.label}</p>
@@ -237,7 +238,7 @@ export default function PhotoImport() {
       {phase === "review" && (
         <>
           <div className="flex items-center gap-2 mb-4">
-            <Voki mood={rows.length ? "cheer" : "sad"} size={72} className="shrink-0" />
+            <MyVoki mood={rows.length ? "cheer" : "sad"} size={72} className="shrink-0" />
             {message && <SpeechBubble>{message}</SpeechBubble>}
           </div>
           {aiNotice && (

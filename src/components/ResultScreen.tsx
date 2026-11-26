@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import { achievementDef, type RoundResult } from "@/lib/repo";
 import { sfx } from "@/lib/sound";
 import type { Word } from "@/lib/types";
-import { SpeechBubble, Voki } from "./Voki";
+import { MyVoki } from "./MyVoki";
+import { SpeechBubble } from "./Voki";
 
 async function confetti(big: boolean) {
   const { default: c } = await import("canvas-confetti");
@@ -49,7 +50,7 @@ export function ResultScreen({
   return (
     <div className="flex flex-col items-center text-center pt-4">
       <div className="flex items-center gap-2 mb-4 self-stretch">
-        <Voki mood={result.stars >= 2 ? "cheer" : "happy"} size={96} className="anim-float shrink-0" />
+        <MyVoki mood={result.stars >= 2 ? "cheer" : "happy"} size={96} className="anim-float shrink-0" />
         <SpeechBubble className="text-left">{message}</SpeechBubble>
       </div>
 

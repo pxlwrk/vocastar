@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { migrateProfile } from "./shop";
 import type { Achievement, GameSession, Profile, Progress, VocabList, Word } from "./types";
 
 export interface ProfileSnapshot {
@@ -39,6 +40,7 @@ export async function exportProfile(profileId: string): Promise<ProfileSnapshot>
 export async function importProfile(snap: ProfileSnapshot): Promise<{ profileId: string; replaced: boolean }> {
   if (snap?.version !== 1 || !snap.profile?.id) throw new Error("Ungültige Datei");
   return db.transaction("rw", [db.profiles, db.lists, db.words, db.progress, db.achievements, db.sessions], async () => {
+    snap = { ...snap, profile: migrateProfile(snap.profile) };
     const existing = await db.profiles.get(snap.profile.id);
     const replaced = !!existing;
     if (!existing || existing.updatedAt <= snap.profile.updatedAt) {

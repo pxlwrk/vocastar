@@ -5,7 +5,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { DifficultyPicker } from "@/components/Pickers";
 import { Header, Page } from "@/components/ui";
-import { SpeechBubble, Voki } from "@/components/Voki";
+import { MyVoki } from "@/components/MyVoki";
+import { SpeechBubble } from "@/components/Voki";
 import { useProfile } from "@/hooks/useProfile";
 import { db } from "@/lib/db";
 import { getLanguage } from "@/lib/languages";
@@ -48,7 +49,7 @@ export default function GameMenu() {
         back={`/listen/${list.id}`}
       />
       <div className="flex items-center gap-2 mb-5">
-        <Voki mood="cheer" size={72} className="shrink-0" />
+        <MyVoki mood="cheer" size={72} className="shrink-0" />
         <SpeechBubble>Welches Spiel spielen wir? {count} Wörter warten auf dich!</SpeechBubble>
       </div>
 

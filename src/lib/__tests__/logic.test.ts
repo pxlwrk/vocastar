@@ -5,6 +5,7 @@ import { buildQuestion, letterTiles } from "../game-engine";
 import { applyAnswer, emptyProgress, pickForRound } from "../leitner";
 import { DIFFICULTIES } from "../levels";
 import { parsePairs, splitLine } from "../parse-pairs";
+import { migrateProfile, SHOP_ITEMS, toggleEquipChanges } from "../shop";
 import { checkAnswer, levenshtein } from "../text";
 import type { Word } from "../types";
 
@@ -108,11 +109,19 @@ describe("Spiel-Logik", () => {
 });
 
 describe("Gamification", () => {
-  it("Level-Kurve", () => {
-    expect(levelFromXp(0)).toEqual({ level: 1, current: 0, needed: 100 });
-    expect(levelFromXp(100).level).toBe(2);
-    expect(levelFromXp(249)).toEqual({ level: 2, current: 149, needed: 150 });
-    expect(levelFromXp(250).level).toBe(3);
+  it("Level-Kurve: Aufwand je Level wächst proportional zum Level", () => {
+    expect(levelFromXp(0)).toEqual({ level: 1, current: 0, needed: 250 });
+    expect(levelFromXp(249).level).toBe(1);
+    expect(levelFromXp(250)).toEqual({ level: 2, current: 0, needed: 500 });
+    expect(levelFromXp(749).level).toBe(2);
+    expect(levelFromXp(750).level).toBe(3);
+    // bis Level n insgesamt 250 * n * (n - 1) / 2 XP
+    for (const n of [5, 10, 20]) {
+      const total = (250 * n * (n - 1)) / 2;
+      expect(levelFromXp(total).level).toBe(n);
+      expect(levelFromXp(total - 1).level).toBe(n - 1);
+      expect(levelFromXp(total).needed).toBe(250 * n);
+    }
   });
   it("Sterne und Combo", () => {
     expect(starsForAccuracy(1)).toBe(3);
@@ -166,5 +175,57 @@ describe("Codes", () => {
     }
     expect(normalizeCode("löwe 123")).toBe("LOEWE-123");
     expect(isValidCode("x")).toBe(false);
+  });
+});
+
+describe("Schatzladen", () => {
+  const base = {
+    id: "p",
+    name: "Mia",
+    avatar: "🦊",
+    color: "#000",
+    grade: 5 as const,
+    difficulty: "mittel" as const,
+    xp: 0,
+    stars: 3,
+    streak: 0,
+    bestStreak: 0,
+    todayCount: 0,
+    dailyGoal: 20,
+    settings: { autoSpeak: false, sound: true, speechRate: "normal" as const },
+    createdAt: 0,
+    updatedAt: 0,
+  };
+
+  it("überträgt alte Käufe und erstattet nicht übertragbare", () => {
+    const old = { ...base, unlockedItems: ["cap", "glasses", "rocket", "unicorn"], equippedItem: "glasses" };
+    const p = migrateProfile(old);
+    expect(p.unlockedItems.sort()).toEqual(["cap", "sunglasses"]);
+    expect(p.stars).toBe(3 + 60 + 80);
+    expect(p.outfit).toEqual({ eyes: "sunglasses" });
+    expect("equippedItem" in p).toBe(false);
+  });
+
+  it("lässt neue Profile unverändert", () => {
+    const p = { ...base, unlockedItems: ["cap"], outfit: { head: "cap" } };
+    expect(migrateProfile(p)).toBe(p);
+  });
+
+  it("Anziehen ersetzt nur den passenden Platz", () => {
+    const p = { ...base, unlockedItems: [], outfit: { head: "cap", eyes: "glasses" } };
+    const crown = SHOP_ITEMS.find((i) => i.id === "crown")!;
+    expect(toggleEquipChanges(p, crown, "🦊")).toEqual({ outfit: { head: "crown", eyes: "glasses" } });
+    const glasses = SHOP_ITEMS.find((i) => i.id === "glasses")!;
+    expect(toggleEquipChanges(p, glasses, "🦊")).toEqual({ outfit: { head: "cap", eyes: undefined } });
+  });
+
+  it("teurere Schätze brauchen höhere Level", () => {
+    for (const cat of ["voki", "rahmen", "tiere"] as const) {
+      const items = SHOP_ITEMS.filter((i) => i.category === cat);
+      for (let i = 1; i < items.length; i++) {
+        expect(items[i].price).toBeGreaterThanOrEqual(items[i - 1].price);
+        expect(items[i].minLevel ?? 1).toBeGreaterThanOrEqual(items[i - 1].minLevel ?? 1);
+      }
+    }
   });
 });

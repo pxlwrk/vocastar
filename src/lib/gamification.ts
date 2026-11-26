@@ -3,15 +3,22 @@ import type { Profile } from "./types";
 export const XP_PER_CORRECT = 10;
 export const XP_ALMOST = 5;
 
-/** XP-Kurve: Level n braucht 100 + (n-1)*50 XP. */
+/** XP pro Level-Stufe: Von Level n nach n+1 braucht man n × 250 XP. */
+export const XP_PER_LEVEL_STEP = 250;
+
+export function xpForNextLevel(level: number): number {
+  return XP_PER_LEVEL_STEP * level;
+}
+
+/** Aufwand steigt proportional zum Level: insgesamt 250 × n × (n-1) / 2 XP bis Level n. */
 export function levelFromXp(xp: number): { level: number; current: number; needed: number } {
   let level = 1;
-  let rest = xp;
-  let needed = 100;
+  let rest = Math.max(0, xp);
+  let needed = xpForNextLevel(level);
   while (rest >= needed) {
     rest -= needed;
     level++;
-    needed = 100 + (level - 1) * 50;
+    needed = xpForNextLevel(level);
   }
   return { level, current: rest, needed };
 }
@@ -97,26 +104,9 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { key: "blitz-15", emoji: "⚡", title: "Blitzschnell", description: "15 Treffer in einer Blitzrunde" },
   { key: "photo", emoji: "📸", title: "Fotograf", description: "Vokabeln per Foto importiert" },
   { key: "level-5", emoji: "⭐", title: "Aufsteiger", description: "Level 5 erreicht" },
+  { key: "level-10", emoji: "🌟", title: "Superstar", description: "Level 10 erreicht" },
   { key: "shopper", emoji: "🎁", title: "Schatzjäger", description: "Etwas im Schatzladen gekauft" },
-];
-
-export interface ShopItem {
-  id: string;
-  emoji: string;
-  name: string;
-  price: number;
-}
-
-export const SHOP_ITEMS: ShopItem[] = [
-  { id: "cap", emoji: "🧢", name: "Kappe", price: 5 },
-  { id: "bow", emoji: "🎀", name: "Schleife", price: 8 },
-  { id: "glasses", emoji: "🕶️", name: "Sonnenbrille", price: 12 },
-  { id: "flower", emoji: "🌸", name: "Blume", price: 15 },
-  { id: "tophat", emoji: "🎩", name: "Zylinder", price: 20 },
-  { id: "headphones", emoji: "🎧", name: "Kopfhörer", price: 25 },
-  { id: "crown", emoji: "👑", name: "Krone", price: 40 },
-  { id: "rocket", emoji: "🚀", name: "Rakete", price: 60 },
-  { id: "unicorn", emoji: "🦄", name: "Einhorn", price: 80 },
+  { key: "dress-up", emoji: "🦉", title: "Modeprofi", description: "Voki Kopf, Augen und Hals angezogen" },
 ];
 
 export const AVATARS = ["🦊", "🐼", "🐯", "🐸", "🐙", "🦄", "🐨", "🦁", "🐧", "🐶", "🐱", "🐰", "🦖", "🐬", "🦉", "🐝"];

@@ -6,7 +6,8 @@ import { Avatar } from "@/components/Avatar";
 import { ListCard } from "@/components/ListCard";
 import { TabBar } from "@/components/TabBar";
 import { Page, Pill, ProgressBar } from "@/components/ui";
-import { SpeechBubble, Voki } from "@/components/Voki";
+import { MyVoki } from "@/components/MyVoki";
+import { SpeechBubble } from "@/components/Voki";
 import { useProfile } from "@/hooks/useProfile";
 import { db } from "@/lib/db";
 import { levelFromXp, todayProgress, visibleStreak } from "@/lib/gamification";
@@ -64,7 +65,7 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-2 mb-5">
-          <Voki mood={today >= profile.dailyGoal ? "cheer" : "happy"} size={92} className="anim-float shrink-0" />
+          <MyVoki mood={today >= profile.dailyGoal ? "cheer" : "happy"} size={92} className="anim-float shrink-0" />
           <SpeechBubble>{greeting(profile.name, streak, today, profile.dailyGoal, welcome && !lists.length)}</SpeechBubble>
         </div>
 

@@ -9,6 +9,7 @@ import { Header, Modal, Page } from "@/components/ui";
 import { useProfile } from "@/hooks/useProfile";
 import { setCurrentProfileId } from "@/lib/current-profile";
 import { AVATARS, COLORS } from "@/lib/gamification";
+import { SHOP_ITEMS } from "@/lib/shop";
 import { DIFFICULTIES } from "@/lib/levels";
 import { updateProfile } from "@/lib/repo";
 import { setVoicePreference, speak } from "@/lib/speech";
@@ -178,7 +179,7 @@ export default function Settings() {
           <Avatar profile={profile} size={96} />
         </div>
         <div className="grid grid-cols-4 gap-2 mb-4">
-          {AVATARS.map((a) => (
+          {[...AVATARS, ...SHOP_ITEMS.filter((i) => i.category === "tiere" && profile.unlockedItems.includes(i.id)).map((i) => i.emoji)].map((a) => (
             <button
               key={a}
               onClick={() => updateProfile(profile.id, { avatar: a })}

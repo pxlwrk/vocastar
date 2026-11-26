@@ -25,7 +25,10 @@ export interface Profile {
   todayCount: number;
   dailyGoal: number;
   unlockedItems: string[];
-  equippedItem?: string;
+  /** Was Voki trägt, je Platz (Kopf, Augen, Hals) */
+  outfit?: Partial<Record<"head" | "eyes" | "neck", string>>;
+  /** Rahmen um den Avatar */
+  frame?: string;
   settings: ProfileSettings;
   createdAt: number;
   updatedAt: number;
